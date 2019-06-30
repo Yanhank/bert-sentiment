@@ -25,6 +25,10 @@ import modeling
 import optimization
 import tokenization
 import tensorflow as tf
+import codecs
+import numpy as np
+
+
 
 flags = tf.flags
 
@@ -372,6 +376,85 @@ class ColaProcessor(DataProcessor):
       examples.append(
           InputExample(guid=guid, text_a=text_a, text_b=None, label=label))
     return examples
+
+
+class SentimentProcessor(DataProcessor):
+
+    def get_train_examples(self, data_dir):
+        """See base class."""
+        return self._create_examples(
+            data_dir, "train")
+
+    def get_dev_examples(self, data_dir):
+        """See base class."""
+        return self._create_examples(
+            data_dir, "dev")
+
+    def get_test_examples(self, data_dir):
+        """See base class."""
+        return self._create_examples(
+            data_dir, "test")
+
+    def get_labels(self):
+        """See base class."""
+        return ["0", "1"]
+
+    def _create_examples(self, dir, set_type):
+        """Creates examples for the training and dev sets."""
+        texts, labels = self.load_corpus(dir, set_type)
+        examples = []
+        for i, (raw_line, raw_label) in enumerate(zip(texts, labels)):
+            # Only the test set has a header
+            if set_type == "test" and i == 0:
+                continue
+            guid = "%s-%s" % (set_type, i)
+            if set_type == "test":
+                text_a = tokenization.convert_to_unicode(raw_line)
+                label = "0"
+            else:
+                text_a = tokenization.convert_to_unicode(raw_line)
+                label = tokenization.convert_to_unicode(raw_label)
+            examples.append(
+                InputExample(guid=guid, text_a=text_a, text_b=None, label=label))
+        return examples
+
+
+    def shuffle_data(self, texts, labels):
+        assert len(texts) == len(labels), 'Text and label must be same size!'
+        texts_nd = np.array(texts)
+        labels_nd = np.array(labels)
+        index = [i for i in range(len(texts))]
+        import random
+        random.shuffle(index)
+        texts_nd = texts_nd[index]
+        labels_nd = labels_nd[index]
+        return list(texts_nd), list(labels)
+
+    def load_corpus(self, dir, set_type):
+        list_file = ['neg', 'pos']
+        all_text = list()
+        all_label = list()
+        for name in list_file:
+
+            # load positive and negative corpus from file
+            with codecs.open(os.path.join(dir, name+'.'+set_type), 'r', encoding='utf-8') as f:
+                texts = list()
+                for line in f.readlines():
+                    texts.append(line)
+                # add label according to the postfix of the file
+                if name == 'neg':
+                    labels = ["0" for i in range(len(texts))]
+                else :
+                    labels = ["1" for i in range(len(texts))]
+                print('in mode %s, %s , text size %d, label size %d' % (set_type, name, len(texts), len(labels)))
+                all_text.extend(texts)
+                all_label.extend(labels)
+
+        if set_type == 'train' or set_type == 'dev':
+            all_label, all_text = self.shuffle_data(all_label, all_text)
+        print('finish shuffling')
+
+        return all_text,all_label
 
 
 def convert_single_example(ex_index, example, label_list, max_seq_length,
@@ -788,6 +871,7 @@ def main(_):
       "mnli": MnliProcessor,
       "mrpc": MrpcProcessor,
       "xnli": XnliProcessor,
+      "sentiment": SentimentProcessor
   }
 
   tokenization.validate_case_matches_checkpoint(FLAGS.do_lower_case,
