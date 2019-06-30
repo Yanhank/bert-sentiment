@@ -114,3 +114,16 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# model
+model/
+pre_trained_model/bert*
+pre_trained_model/vocab.txt
+
+# data and corpus
+data/
+corpus/pos*
+corpus/neg*
+
+# idea project file
+.idea
