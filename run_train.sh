@@ -1,0 +1,13 @@
+python run_classifier.py \
+  --task_name=sentiment \
+  --do_train=true \
+  --do_eval=true \
+  --data_dir=corpus \
+  --vocab_file=pre_trained_model/vocab.txt \
+  --bert_config_file=pre_trained_model/bert_config.json \
+  --init_checkpoint=pre_trained_model/bert_model.ckpt \
+  --max_seq_length=64 \
+  --train_batch_size=32 \
+  --learning_rate=1e-5 \
+  --num_train_epochs=3.0 \
+  --output_dir=model
